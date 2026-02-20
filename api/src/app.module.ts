@@ -3,9 +3,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { WorkspaceModule } from './workspace/workspace.module';
+import { ProjectModule } from './project/project.module';
+import { TaskModule } from './task/task.module';
 
 @Module({
-  imports: [AuthModule, WorkspaceModule],
+  imports: [AuthModule, WorkspaceModule, ProjectModule, TaskModule],
   controllers: [AppController],
   providers: [AppService],
 })
