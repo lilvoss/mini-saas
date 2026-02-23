@@ -47,4 +47,14 @@ export class TaskController {
   delete(@Param('taskId') taskId: string, @Req() req: any) {
     return this.taskService.deleteTask(taskId, req.user.userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+@Patch(':taskId/assign')
+assign(
+  @Param('taskId') taskId: string,
+  @Body() body: { userId: string }, // le membre à assigner
+  @Req() req: any,
+) {
+  return this.taskService.assignTask(taskId, req.user.userId, body.userId);
+}
 }

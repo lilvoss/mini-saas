@@ -44,6 +44,26 @@ let WorkspaceService = class WorkspaceService {
             role: m.role,
         }));
     }
+    async addMember(workspaceId, userIdToAdd, role, currentUserId) {
+        const membership = await this.prisma.membership.findUnique({
+            where: {
+                userId_workspaceId: {
+                    userId: currentUserId,
+                    workspaceId,
+                },
+            },
+        });
+        if (!membership || membership.role !== client_1.Role.ADMIN) {
+            throw new common_1.ForbiddenException('Only admin can add members');
+        }
+        return this.prisma.membership.create({
+            data: {
+                userId: userIdToAdd,
+                workspaceId,
+                role,
+            },
+        });
+    }
 };
 exports.WorkspaceService = WorkspaceService;
 exports.WorkspaceService = WorkspaceService = __decorate([

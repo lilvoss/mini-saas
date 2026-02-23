@@ -29,6 +29,9 @@ let WorkspaceController = class WorkspaceController {
         const userId = req.user.userId;
         return this.workspaceService.findUserWorkspaces(userId);
     }
+    async addMember(workspaceId, body, req) {
+        return this.workspaceService.addMember(workspaceId, body.userId, body.role, req.user.userId);
+    }
 };
 exports.WorkspaceController = WorkspaceController;
 __decorate([
@@ -48,6 +51,16 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", Promise)
 ], WorkspaceController.prototype, "getMyWorkspaces", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Post)(':workspaceId/members'),
+    __param(0, (0, common_1.Param)('workspaceId')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Req)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", Promise)
+], WorkspaceController.prototype, "addMember", null);
 exports.WorkspaceController = WorkspaceController = __decorate([
     (0, common_1.Controller)('workspaces'),
     __metadata("design:paramtypes", [workspace_service_1.WorkspaceService])

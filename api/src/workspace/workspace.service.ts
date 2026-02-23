@@ -37,4 +37,34 @@ export class WorkspaceService {
       role: m.role,
     }));
   }
+
+  async addMember(
+  workspaceId: string,
+  userIdToAdd: string,
+  role: Role,
+  currentUserId: string,
+) {
+  // Vérifier que current user est ADMIN
+  const membership = await this.prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: {
+        userId: currentUserId,
+        workspaceId,
+      },
+    },
+  });
+
+  if (!membership || membership.role !== Role.ADMIN) {
+    throw new ForbiddenException('Only admin can add members');
+  }
+
+  // Ajouter le membre
+  return this.prisma.membership.create({
+    data: {
+      userId: userIdToAdd,
+      workspaceId,
+      role,
+    },
+  });
+}
 }

@@ -117,4 +117,42 @@ export class TaskService {
       where: { id: taskId },
     });
   }
+
+  async assignTask(taskId: string, byUserId: string, memberUserId: string) {
+  // Vérifier que la task existe et récupérer le workspace du projet
+  const task = await this.prisma.task.findUnique({
+    where: { id: taskId },
+    include: { project: { include: { workspace: true } } },
+  });
+
+  if (!task) throw new NotFoundException('Task not found');
+
+  // Vérifier que l’utilisateur qui assigne est ADMIN du workspace
+  const membership = await this.prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: { userId: byUserId, workspaceId: task.project.workspaceId },
+    },
+  });
+
+  if (!membership || membership.role !== 'ADMIN') {
+    throw new ForbiddenException('Only admin can assign tasks');
+  }
+
+  // Vérifier que le membre assigné appartient au workspace
+  const member = await this.prisma.membership.findUnique({
+    where: {
+      userId_workspaceId: { userId: memberUserId, workspaceId: task.project.workspaceId },
+    },
+  });
+
+  if (!member) {
+    throw new ForbiddenException('User is not a member of this workspace');
+  }
+
+  // Assigner la task
+  return this.prisma.task.update({
+    where: { id: taskId },
+    data: { assignedTo: memberUserId },
+  });
+}
 }

@@ -5,9 +5,11 @@ import {
   UseGuards,
   Req,
   Get,
+  Param
 } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Role } from '@prisma/client';
 
 @Controller('workspaces')
 export class WorkspaceController {
@@ -28,4 +30,19 @@ export class WorkspaceController {
     const userId = req.user.userId;
     return this.workspaceService.findUserWorkspaces(userId);
   }
+
+  @UseGuards(JwtAuthGuard)
+@Post(':workspaceId/members')
+async addMember(
+  @Param('workspaceId') workspaceId: string,
+  @Body() body: { userId: string; role: Role },
+  @Req() req: any,
+) {
+  return this.workspaceService.addMember(
+    workspaceId,
+    body.userId,
+    body.role,
+    req.user.userId,
+  );
+}
 }
