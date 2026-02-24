@@ -1,4 +1,4 @@
-import { Injectable, ForbiddenException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Role } from '@prisma/client';
 
@@ -6,16 +6,15 @@ import { Role } from '@prisma/client';
 export class WorkspaceService {
   constructor(private prisma: PrismaService) {}
 
-  // Créer un workspace et ajouter le user comme ADMIN
   async create(name: string, userId: string) {
     const workspace = await this.prisma.workspace.create({
       data: {
         name,
         memberships: {
-          create: { 
-            userId, // <-- direct ici
-            role: Role.ADMIN, // ou 'ADMIN' si tu préfères
-        },
+          create: {
+            userId,
+            role: Role.ADMIN,
+          },
         },
       },
       include: { memberships: true },
@@ -24,7 +23,6 @@ export class WorkspaceService {
     return workspace;
   }
 
-  // Récupérer tous les workspaces où l'utilisateur a un membership
   async findUserWorkspaces(userId: string) {
     const memberships = await this.prisma.membership.findMany({
       where: { userId },
@@ -38,33 +36,14 @@ export class WorkspaceService {
     }));
   }
 
-  async addMember(
-  workspaceId: string,
-  userIdToAdd: string,
-  role: Role,
-  currentUserId: string,
-) {
-  // Vérifier que current user est ADMIN
-  const membership = await this.prisma.membership.findUnique({
-    where: {
-      userId_workspaceId: {
-        userId: currentUserId,
+  
+  async addMember(workspaceId: string, userIdToAdd: string, role: Role) {
+    return this.prisma.membership.create({
+      data: {
+        userId: userIdToAdd,
         workspaceId,
+        role,
       },
-    },
-  });
-
-  if (!membership || membership.role !== Role.ADMIN) {
-    throw new ForbiddenException('Only admin can add members');
+    });
   }
-
-  // Ajouter le membre
-  return this.prisma.membership.create({
-    data: {
-      userId: userIdToAdd,
-      workspaceId,
-      role,
-    },
-  });
-}
 }

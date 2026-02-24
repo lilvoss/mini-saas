@@ -1,34 +1,42 @@
-import {
-  Injectable,
-  ForbiddenException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
-import { Role, TaskStatus, Priority } from '@prisma/client';
+import { TaskStatus, Priority } from '@prisma/client';
 
 @Injectable()
 export class TaskService {
   constructor(private prisma: PrismaService) {}
 
-  // 🔎 Vérifier membership
-  private async checkMembership(userId: string, workspaceId: string) {
-    const membership = await this.prisma.membership.findUnique({
-      where: {
-        userId_workspaceId: { userId, workspaceId },
-      },
+  // ✅ Helper pour vérifier que le projet appartient bien au workspace
+  private async checkProjectInWorkspace(projectId: string, workspaceId: string) {
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
     });
 
-    if (!membership) {
-      throw new ForbiddenException('You are not in this workspace');
+    if (!project || project.workspaceId !== workspaceId) {
+      throw new NotFoundException('Project not found in this workspace');
     }
 
-    return membership;
+    return project;
   }
 
-  // 🟢 CREATE
+  // ✅ Helper pour vérifier que la task appartient bien au workspace
+  private async checkTaskInWorkspace(taskId: string, workspaceId: string) {
+    const task = await this.prisma.task.findUnique({
+      where: { id: taskId },
+      include: { project: true },
+    });
+
+    if (!task || task.project.workspaceId !== workspaceId) {
+      throw new NotFoundException('Task not found in this workspace');
+    }
+
+    return task;
+  }
+
+  // 🟢 CREATE — RolesGuard vérifie déjà le membership
   async createTask(
     projectId: string,
-    userId: string,
+    workspaceId: string,
     data: {
       title: string;
       description?: string;
@@ -37,31 +45,16 @@ export class TaskService {
       dueDate?: Date;
     },
   ) {
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-    });
-
-    if (!project) throw new NotFoundException('Project not found');
-
-    await this.checkMembership(userId, project.workspaceId);
+    await this.checkProjectInWorkspace(projectId, workspaceId);
 
     return this.prisma.task.create({
-      data: {
-        ...data,
-        projectId,
-      },
+      data: { ...data, projectId },
     });
   }
 
   // 🔵 READ
-  async getProjectTasks(projectId: string, userId: string) {
-    const project = await this.prisma.project.findUnique({
-      where: { id: projectId },
-    });
-
-    if (!project) throw new NotFoundException('Project not found');
-
-    await this.checkMembership(userId, project.workspaceId);
+  async getProjectTasks(projectId: string, workspaceId: string) {
+    await this.checkProjectInWorkspace(projectId, workspaceId);
 
     return this.prisma.task.findMany({
       where: { projectId },
@@ -71,7 +64,7 @@ export class TaskService {
   // 🟡 UPDATE
   async updateTask(
     taskId: string,
-    userId: string,
+    workspaceId: string,
     data: Partial<{
       title: string;
       description: string;
@@ -80,14 +73,7 @@ export class TaskService {
       dueDate: Date;
     }>,
   ) {
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
-      include: { project: true },
-    });
-
-    if (!task) throw new NotFoundException('Task not found');
-
-    await this.checkMembership(userId, task.project.workspaceId);
+    await this.checkTaskInWorkspace(taskId, workspaceId);
 
     return this.prisma.task.update({
       where: { id: taskId },
@@ -95,64 +81,33 @@ export class TaskService {
     });
   }
 
-  // 🔴 DELETE (ADMIN ONLY)
-  async deleteTask(taskId: string, userId: string) {
-    const task = await this.prisma.task.findUnique({
-      where: { id: taskId },
-      include: { project: true },
-    });
-
-    if (!task) throw new NotFoundException('Task not found');
-
-    const membership = await this.checkMembership(
-      userId,
-      task.project.workspaceId,
-    );
-
-    if (membership.role !== Role.ADMIN) {
-      throw new ForbiddenException('Only admin can delete tasks');
-    }
+  // 🔴 DELETE — ADMIN vérifié par RolesGuard
+  async deleteTask(taskId: string, workspaceId: string) {
+    await this.checkTaskInWorkspace(taskId, workspaceId);
 
     return this.prisma.task.delete({
       where: { id: taskId },
     });
   }
 
-  async assignTask(taskId: string, byUserId: string, memberUserId: string) {
-  // Vérifier que la task existe et récupérer le workspace du projet
-  const task = await this.prisma.task.findUnique({
-    where: { id: taskId },
-    include: { project: { include: { workspace: true } } },
-  });
+  // 🔵 ASSIGN — ADMIN vérifié par RolesGuard
+  async assignTask(taskId: string, workspaceId: string, memberUserId: string) {
+    await this.checkTaskInWorkspace(taskId, workspaceId);
 
-  if (!task) throw new NotFoundException('Task not found');
+    // Vérifier que le membre assigné appartient au workspace
+    const member = await this.prisma.membership.findUnique({
+      where: {
+        userId_workspaceId: { userId: memberUserId, workspaceId },
+      },
+    });
 
-  // Vérifier que l’utilisateur qui assigne est ADMIN du workspace
-  const membership = await this.prisma.membership.findUnique({
-    where: {
-      userId_workspaceId: { userId: byUserId, workspaceId: task.project.workspaceId },
-    },
-  });
+    if (!member) {
+      throw new ForbiddenException('User is not a member of this workspace');
+    }
 
-  if (!membership || membership.role !== 'ADMIN') {
-    throw new ForbiddenException('Only admin can assign tasks');
+    return this.prisma.task.update({
+      where: { id: taskId },
+      data: { assignedTo: memberUserId },
+    });
   }
-
-  // Vérifier que le membre assigné appartient au workspace
-  const member = await this.prisma.membership.findUnique({
-    where: {
-      userId_workspaceId: { userId: memberUserId, workspaceId: task.project.workspaceId },
-    },
-  });
-
-  if (!member) {
-    throw new ForbiddenException('User is not a member of this workspace');
-  }
-
-  // Assigner la task
-  return this.prisma.task.update({
-    where: { id: taskId },
-    data: { assignedTo: memberUserId },
-  });
-}
 }

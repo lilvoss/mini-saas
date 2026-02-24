@@ -25,7 +25,7 @@ export declare class WorkspaceController {
     addMember(workspaceId: string, body: {
         userId: string;
         role: Role;
-    }, req: any): Promise<import("@prisma/client/runtime").GetResult<{
+    }): Promise<import("@prisma/client/runtime").GetResult<{
         id: string;
         role: Role;
         userId: string;

@@ -16,21 +16,22 @@ exports.WorkspaceController = void 0;
 const common_1 = require("@nestjs/common");
 const workspace_service_1 = require("./workspace.service");
 const jwt_auth_guard_1 = require("../auth/jwt-auth.guard");
+const roles_guard_1 = require("../auth/roles.guard");
+const roles_decorator_1 = require("../auth/roles.decorator");
+const client_1 = require("@prisma/client");
 let WorkspaceController = class WorkspaceController {
     workspaceService;
     constructor(workspaceService) {
         this.workspaceService = workspaceService;
     }
-    async createWorkspace(body, req) {
-        const userId = req.user.userId;
-        return this.workspaceService.create(body.name, userId);
+    createWorkspace(body, req) {
+        return this.workspaceService.create(body.name, req.user.userId);
     }
-    async getMyWorkspaces(req) {
-        const userId = req.user.userId;
-        return this.workspaceService.findUserWorkspaces(userId);
+    getMyWorkspaces(req) {
+        return this.workspaceService.findUserWorkspaces(req.user.userId);
     }
-    async addMember(workspaceId, body, req) {
-        return this.workspaceService.addMember(workspaceId, body.userId, body.role, req.user.userId);
+    addMember(workspaceId, body) {
+        return this.workspaceService.addMember(workspaceId, body.userId, body.role);
     }
 };
 exports.WorkspaceController = WorkspaceController;
@@ -41,7 +42,7 @@ __decorate([
     __param(1, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object, Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], WorkspaceController.prototype, "createWorkspace", null);
 __decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
@@ -49,17 +50,17 @@ __decorate([
     __param(0, (0, common_1.Req)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:returntype", void 0)
 ], WorkspaceController.prototype, "getMyWorkspaces", null);
 __decorate([
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
+    (0, roles_decorator_1.Roles)(client_1.Role.ADMIN),
     (0, common_1.Post)(':workspaceId/members'),
     __param(0, (0, common_1.Param)('workspaceId')),
     __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Req)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
-    __metadata("design:returntype", Promise)
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
 ], WorkspaceController.prototype, "addMember", null);
 exports.WorkspaceController = WorkspaceController = __decorate([
     (0, common_1.Controller)('workspaces'),

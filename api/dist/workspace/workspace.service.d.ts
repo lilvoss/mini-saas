@@ -20,7 +20,7 @@ export declare class WorkspaceService {
         name: string;
         role: Role;
     }[]>;
-    addMember(workspaceId: string, userIdToAdd: string, role: Role, currentUserId: string): Promise<import("@prisma/client/runtime").GetResult<{
+    addMember(workspaceId: string, userIdToAdd: string, role: Role): Promise<import("@prisma/client/runtime").GetResult<{
         id: string;
         role: Role;
         userId: string;

@@ -1,28 +1,41 @@
-import { Controller, Post, Body, UseGuards, Req, Get, Param ,Delete } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Req, Get, Param, Delete } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
+import { Role } from '@prisma/client';
 import { ProjectService } from './project.service';
 
-@Controller('projects')
+@Controller('workspaces/:workspaceId/projects') // ✅ workspaceId toujours dans l'URL
 export class ProjectController {
   constructor(private projectService: ProjectService) {}
 
-  // 🔐 Créer un projet (seulement admin)
-  @UseGuards(JwtAuthGuard)
+  // ADMIN only — RolesGuard vérifie automatiquement via :workspaceId
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Post()
-  async create(@Body() body: { name: string; workspaceId: string }, @Req() req: any) {
-    return this.projectService.createProject(body.name, body.workspaceId, req.user.userId);
+  async create(
+    @Param('workspaceId') workspaceId: string,
+    @Body() body: { name: string },
+  ) {
+    return this.projectService.createProject(body.name, workspaceId);
   }
 
-  // 🔐 Voir les projets d'un workspace
-  @UseGuards(JwtAuthGuard)
-  @Get(':workspaceId')
+  // Tous les membres du workspace peuvent voir les projets
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN, Role.MEMBER)
+  @Get()
   async getProjects(@Param('workspaceId') workspaceId: string) {
     return this.projectService.findWorkspaceProjects(workspaceId);
   }
 
-   @UseGuards(JwtAuthGuard)
+  // ADMIN only
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(Role.ADMIN)
   @Delete(':projectId')
-  async delete(@Param('projectId') projectId: string, @Req() req: any) {
-    return this.projectService.deleteProject(projectId, req.user.userId);
+  async delete(
+    @Param('workspaceId') workspaceId: string,
+    @Param('projectId') projectId: string,
+  ) {
+    return this.projectService.deleteProject(projectId, workspaceId);
   }
 }
