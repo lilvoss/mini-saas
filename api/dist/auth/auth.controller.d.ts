@@ -5,12 +5,14 @@ export declare class AuthController {
     register(body: {
         email: string;
         password: string;
+        fullName?: string;
     }): Promise<{
         token: string;
         user: import("@prisma/client/runtime").GetResult<{
             id: string;
             email: string;
             password: string;
+            fullName: string | null;
             createdAt: Date;
         }, unknown> & {};
     }>;
@@ -23,6 +25,7 @@ export declare class AuthController {
             id: string;
             email: string;
             password: string;
+            fullName: string | null;
             createdAt: Date;
         }, unknown> & {};
     }>;

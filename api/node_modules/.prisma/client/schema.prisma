@@ -11,6 +11,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
+  fullName  String?
   createdAt DateTime @default(now())
 
   memberships Membership[]
@@ -77,4 +78,5 @@ enum Priority {
   LOW
   MEDIUM
   HIGH
+  URGENT
 }

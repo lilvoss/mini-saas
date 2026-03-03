@@ -44,14 +44,50 @@ let WorkspaceService = class WorkspaceService {
             role: m.role,
         }));
     }
-    async addMember(workspaceId, userIdToAdd, role) {
-        return this.prisma.membership.create({
-            data: {
-                userId: userIdToAdd,
-                workspaceId,
-                role,
+    async searchUsersByFullName(query) {
+        if (!query || query.trim().length < 2)
+            return [];
+        return this.prisma.user.findMany({
+            where: {
+                fullName: {
+                    contains: query.trim(),
+                    mode: 'insensitive',
+                },
             },
+            select: {
+                id: true,
+                fullName: true,
+                email: true,
+            },
+            take: 8,
+            orderBy: { fullName: 'asc' },
         });
+    }
+    async getWorkspaceMembers(workspaceId) {
+        return this.prisma.membership.findMany({
+            where: { workspaceId },
+            include: {
+                user: { select: { id: true, fullName: true, email: true } },
+            },
+            orderBy: { role: 'asc' },
+        });
+    }
+    async addMember(workspaceId, userIdToAdd, role) {
+        try {
+            return await this.prisma.membership.create({
+                data: {
+                    userId: userIdToAdd,
+                    workspaceId,
+                    role,
+                },
+            });
+        }
+        catch (err) {
+            if (err?.code === 'P2002') {
+                throw new common_1.ConflictException('Cet utilisateur est déjà membre de ce workspace');
+            }
+            throw err;
+        }
     }
 };
 exports.WorkspaceService = WorkspaceService;

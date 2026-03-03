@@ -22,7 +22,7 @@ let AuthController = class AuthController {
         this.authService = authService;
     }
     register(body) {
-        return this.authService.register(body.email, body.password);
+        return this.authService.register(body.email, body.password, body.fullName);
     }
     login(body) {
         return this.authService.login(body.email, body.password);

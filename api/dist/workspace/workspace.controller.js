@@ -30,6 +30,12 @@ let WorkspaceController = class WorkspaceController {
     getMyWorkspaces(req) {
         return this.workspaceService.findUserWorkspaces(req.user.userId);
     }
+    searchUsers(query) {
+        return this.workspaceService.searchUsersByFullName(query);
+    }
+    getMembers(workspaceId) {
+        return this.workspaceService.getWorkspaceMembers(workspaceId);
+    }
     addMember(workspaceId, body) {
         return this.workspaceService.addMember(workspaceId, body.userId, body.role);
     }
@@ -53,9 +59,26 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], WorkspaceController.prototype, "getMyWorkspaces", null);
 __decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)('users/search'),
+    __param(0, (0, common_1.Query)('q')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WorkspaceController.prototype, "searchUsers", null);
+__decorate([
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard),
+    (0, common_1.Get)(':workspaceId/members'),
+    __param(0, (0, common_1.Param)('workspaceId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], WorkspaceController.prototype, "getMembers", null);
+__decorate([
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, roles_guard_1.RolesGuard),
     (0, roles_decorator_1.Roles)(client_1.Role.ADMIN),
     (0, common_1.Post)(':workspaceId/members'),
+    (0, common_1.HttpCode)(common_1.HttpStatus.CREATED),
     __param(0, (0, common_1.Param)('workspaceId')),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

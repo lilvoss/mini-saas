@@ -1,5 +1,10 @@
 // src/auth/roles.guard.ts
-import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
+import {
+  Injectable,
+  CanActivate,
+  ExecutionContext,
+  ForbiddenException,
+} from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY } from './roles.decorator';
 import { PrismaService } from '../prisma.service';
@@ -14,20 +19,30 @@ export class RolesGuard implements CanActivate {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (!requiredRoles) return true; // pas de rôle requis
+
+    if (!requiredRoles || requiredRoles.length === 0) return true;
 
     const request = context.switchToHttp().getRequest();
-    const userId = request.user.userId;
-    const workspaceId = request.params.workspaceId || request.body.workspaceId;
+    const userId = request.user?.userId;
+    if (!userId) throw new ForbiddenException('Non authentifié');
 
-    if (!workspaceId) return true; // certaines routes n'ont pas de workspaceId
+    // ✅ Les params de route sont disponibles ici — NestJS les résout avant les guards
+    const workspaceId = request.params?.workspaceId;
+    if (!workspaceId) return true;
 
-    const membership = await this.prisma.membership.findUnique({
-      where: { userId_workspaceId: { userId, workspaceId } },
-    });
+    // ✅ try/catch : une erreur Prisma ici (UUID malformé etc.) causait le 500
+    let membership;
+    try {
+      membership = await this.prisma.membership.findUnique({
+        where: { userId_workspaceId: { userId, workspaceId } },
+      });
+    } catch (err) {
+      console.error('[RolesGuard] Prisma error:', err);
+      throw new ForbiddenException('Erreur de vérification des permissions');
+    }
 
     if (!membership || !requiredRoles.includes(membership.role)) {
-      throw new ForbiddenException('Insufficient permissions');
+      throw new ForbiddenException('Permissions insuffisantes');
     }
 
     return true;

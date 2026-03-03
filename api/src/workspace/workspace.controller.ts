@@ -1,3 +1,4 @@
+// src/workspace/workspace.controller.ts
 import {
   Controller,
   Post,
@@ -5,7 +6,10 @@ import {
   Body,
   Param,
   Req,
+  Query,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { WorkspaceService } from './workspace.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -29,10 +33,24 @@ export class WorkspaceController {
     return this.workspaceService.findUserWorkspaces(req.user.userId);
   }
 
-  
+  // ⚠️ DOIT être déclarée AVANT /:workspaceId/members
+  // sinon NestJS traite "users" comme un workspaceId
+  @UseGuards(JwtAuthGuard)
+  @Get('users/search')
+  searchUsers(@Query('q') query: string) {
+    return this.workspaceService.searchUsersByFullName(query);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get(':workspaceId/members')
+  getMembers(@Param('workspaceId') workspaceId: string) {
+    return this.workspaceService.getWorkspaceMembers(workspaceId);
+  }
+
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(Role.ADMIN)
   @Post(':workspaceId/members')
+  @HttpCode(HttpStatus.CREATED)
   addMember(
     @Param('workspaceId') workspaceId: string,
     @Body() body: { userId: string; role: Role },

@@ -22,6 +22,23 @@ export declare class WorkspaceController {
         name: string;
         role: Role;
     }[]>;
+    searchUsers(query: string): Promise<{
+        id: string;
+        fullName: string | null;
+        email: string;
+    }[]>;
+    getMembers(workspaceId: string): Promise<({
+        user: {
+            id: string;
+            fullName: string | null;
+            email: string;
+        };
+    } & import("@prisma/client/runtime").GetResult<{
+        id: string;
+        role: Role;
+        userId: string;
+        workspaceId: string;
+    }, unknown> & {})[]>;
     addMember(workspaceId: string, body: {
         userId: string;
         role: Role;

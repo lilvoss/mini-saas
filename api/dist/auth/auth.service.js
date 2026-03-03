@@ -54,7 +54,7 @@ let AuthService = class AuthService {
         this.prisma = prisma;
         this.jwtService = jwtService;
     }
-    async register(email, password) {
+    async register(email, password, fullName) {
         const existingUser = await this.prisma.user.findUnique({ where: { email } });
         if (existingUser) {
             throw new common_1.UnauthorizedException('Email already registered');
@@ -64,6 +64,7 @@ let AuthService = class AuthService {
             data: {
                 email,
                 password: hashedPassword,
+                fullName,
             },
         });
         const token = this.jwtService.sign({
