@@ -7,7 +7,7 @@ async function bootstrap() {
   app.enableCors({
     origin: [
     'http://localhost:3001',
-    'https://mini-saas-1ad9.onrender.com', // ← vous l'aurez après Vercel
+    'https://mini-saas-alpha.vercel.app', // ← vous l'aurez après Vercel
   ],
     credentials: true,
   });
