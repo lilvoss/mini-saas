@@ -604,7 +604,7 @@ export function LoginForm() {
           <div className="left-top">
             <div className="logo-mark">
               <div className="logo-icon"><LogoIcon /></div>
-              <span className="logo-name">Votre Application</span>
+              <span className="logo-name">Orbit</span>
               <span className="logo-badge">Pro</span>
             </div>
           </div>

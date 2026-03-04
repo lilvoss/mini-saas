@@ -525,7 +525,7 @@ const onSubmit = async (data: RegisterFormValues) => {
           <div className="reg-left-top">
             <div className="reg-logo">
               <div className="reg-logo-icon"><LogoIcon /></div>
-              <span className="reg-logo-name">Votre Application</span>
+              <span className="reg-logo-name">Orbit</span>
               <span className="reg-logo-badge">Pro</span>
             </div>
           </div>
@@ -592,7 +592,7 @@ const onSubmit = async (data: RegisterFormValues) => {
         <div className="reg-right">
 
           {/* Back to login */}
-          <Link href="/login" className="reg-back">
+          <Link href="/auth/login" className="reg-back">
             <BackIcon /> Retour à la connexion
           </Link>
 
@@ -702,9 +702,9 @@ const onSubmit = async (data: RegisterFormValues) => {
               </div>
               <span className="terms-text">
                 J'accepte les{' '}
-                <a href="/terms" className="terms-link">Conditions d'utilisation</a>
+                <Link href="/terms" className="terms-link">Conditions d'utilisation</Link>
                 {' '}et la{' '}
-                <a href="/privacy" className="terms-link">Politique de confidentialité</a>
+                <Link href="/privacy" className="terms-link">Politique de confidentialité</Link>
                 {termsError && <span style={{ display:'block', color:'#ef4444', marginTop:4, fontSize:12 }}>⚠ Vous devez accepter les conditions</span>}
               </span>
             </div>
